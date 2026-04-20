@@ -18,7 +18,16 @@ COLOR_RESET='\033[0m'
 COLOR_RED='\033[0;31m'
 COLOR_GREEN='\033[0;32m'
 COLOR_YELLOW='\033[1;33m'
-COLOR_BLUE='\033[0;34m'
+
+set_assume_yes() {
+  # Centralized setters avoid per-file shellcheck false positives for shared globals.
+  ASSUME_YES=1
+}
+
+set_dry_run() {
+  # Dry-run is intentionally global because all modules use common execution helpers.
+  DRY_RUN=1
+}
 
 ensure_dir() {
   # We create required directories once to keep paths predictable and auditable.
@@ -148,7 +157,8 @@ backup_file_if_exists() {
   if [[ -e "${file}" ]]; then
     local name
     name="$(basename "${file}")"
-    local backup_path="${BACKUP_DIR}/${name}.$(date +%s).bak"
+    local backup_path
+    backup_path="${BACKUP_DIR}/${name}.$(date +%s).bak"
     if [[ "${DRY_RUN}" -eq 1 ]]; then
       log_info "[DRY-RUN] Backup ${file} -> ${backup_path}"
     else

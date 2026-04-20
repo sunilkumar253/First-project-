@@ -14,13 +14,13 @@ main() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --yes)
-        ASSUME_YES=1
+        set_assume_yes
         ;;
       --remove-packages)
         remove_packages="1"
         ;;
       --dry-run)
-        DRY_RUN=1
+        set_dry_run
         ;;
       *)
         abort "Unknown option for uninstall: $1"
@@ -34,8 +34,17 @@ main() {
 
   backup_file_if_exists "${HOME}/.bashrc"
 
+  local tracked_pkgs=()
+  if [[ -f "${INSTALL_TRACK_FILE}" ]]; then
+    mapfile -t tracked_pkgs < "${INSTALL_TRACK_FILE}"
+  fi
+
   if [[ -L "${PREFIX}/bin/termux-desktop" || -f "${PREFIX}/bin/termux-desktop" ]]; then
     run_cmd rm -f "${PREFIX}/bin/termux-desktop"
+  fi
+
+  if [[ -L "${PREFIX}/bin/launch-xfce-termux" || -f "${PREFIX}/bin/launch-xfce-termux" ]]; then
+    run_cmd rm -f "${PREFIX}/bin/launch-xfce-termux"
   fi
 
   if [[ -d "${HOME}/.termux-desktop" ]]; then
@@ -43,12 +52,13 @@ main() {
     log_info "Removed ${HOME}/.termux-desktop"
   fi
 
-  if [[ "${remove_packages}" -eq 1 && -f "${INSTALL_TRACK_FILE}" ]]; then
-    mapfile -t pkgs < "${INSTALL_TRACK_FILE}"
-    if [[ "${#pkgs[@]}" -gt 0 ]]; then
-      show_package_plan "Tracked packages to remove:" "${pkgs[@]}"
+  if [[ "${remove_packages}" -eq 1 ]]; then
+    if [[ "${#tracked_pkgs[@]}" -gt 0 ]]; then
+      show_package_plan "Tracked packages to remove:" "${tracked_pkgs[@]}"
       confirm_or_exit "Proceed with removing tracked packages?"
-      run_cmd pkg uninstall -y "${pkgs[@]}"
+      run_cmd pkg uninstall -y "${tracked_pkgs[@]}"
+    else
+      log_info "No tracked package list found; skipping package removal."
     fi
   fi
 

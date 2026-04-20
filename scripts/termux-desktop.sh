@@ -38,7 +38,7 @@ USAGE
 
 install_prefix_command() {
   if [[ "${1:-}" == "dry-run" ]]; then
-    DRY_RUN=1
+    set_dry_run
     shift
     set -- "$@"
   fi
@@ -51,10 +51,10 @@ install_prefix_command() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --yes)
-        ASSUME_YES=1
+        set_assume_yes
         ;;
       --dry-run)
-        DRY_RUN=1
+        set_dry_run
         ;;
       *)
         break
